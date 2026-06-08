@@ -1,6 +1,10 @@
 import type { Song } from '../types';
+import { BATCH1 } from './batch1';
+import { BATCH2 } from './batch2';
+import { BATCH3 } from './batch3';
+import { BATCH4 } from './batch4';
 
-export const CATALOG: Song[] = [
+const BASE: Song[] = [
   {
     id: 'the-weeknd-blinding-lights',
     title: 'Blinding Lights',
@@ -2195,3 +2199,28 @@ export const CATALOG: Song[] = [
     instrumentation: ['flute', '808', 'drums', 'vocals'],
   },
 ];
+
+/**
+ * The shipped catalog = the curated base + four batches of trending/popular
+ * tracks, with duplicate ids and duplicate artist+title pairs removed, capped at
+ * 500 songs. Base entries come first so they always survive de-duplication.
+ */
+function buildCatalog(): Song[] {
+  const seenId = new Set<string>();
+  const seenKey = new Set<string>();
+  const out: Song[] = [];
+  for (const song of [...BASE, ...BATCH1, ...BATCH2, ...BATCH3, ...BATCH4]) {
+    const key = `${song.artist}::${song.title}`
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (seenId.has(song.id) || seenKey.has(key)) continue;
+    seenId.add(song.id);
+    seenKey.add(key);
+    out.push(song);
+    if (out.length >= 500) break;
+  }
+  return out;
+}
+
+export const CATALOG: Song[] = buildCatalog();
