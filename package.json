@@ -1,0 +1,32 @@
+{
+  "name": "cuesheet",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "CueSheet — a music-supervision tool that recommends known commercial songs to soundtrack footage.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --noEmit"
+  },
+  "dependencies": {
+    "@fontsource/ibm-plex-sans": "^5.1.0",
+    "@fontsource/space-grotesk": "^5.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^4.5.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.3"
+  },
+  "optionalDependencies": {
+    "@xenova/transformers": "^2.17.2"
+  }
+}

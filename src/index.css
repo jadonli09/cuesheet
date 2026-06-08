@@ -1,0 +1,186 @@
+@import 'tailwindcss';
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   CueSheet design system — dark, editorial, pro-creative-tool.
+   Base: deep charcoal. Single vivid accent: acid lime. 4/8px spacing grid.
+   Display: Space Grotesk. Body: IBM Plex Sans. (Bundled via @fontsource.)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  --color-bg: #0a0b0d;
+  --color-surface: #121317;
+  --color-surface-2: #181a20;
+  --color-surface-3: #1f222a;
+  --color-border: #282b34;
+  --color-border-bright: #3a3e49;
+
+  --color-text: #eef0f4;
+  --color-text-dim: #9aa0ac;
+  --color-text-faint: #62677240;
+
+  --color-accent: #ccff00;
+  --color-accent-soft: #d9ff4d;
+  --color-accent-deep: #aadb00;
+
+  --color-cool: #5ad1ff;
+  --color-warm: #ff8a3d;
+
+  --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+
+  --radius-card: 14px;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  * {
+    border-color: var(--color-border);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    /* subtle vignette + grain-free gradient for editorial depth */
+    background-image:
+      radial-gradient(900px 600px at 88% -8%, rgba(204, 255, 0, 0.05), transparent 60%),
+      radial-gradient(700px 500px at 5% 105%, rgba(90, 209, 255, 0.04), transparent 55%);
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: #0a0b0d;
+  }
+
+  /* Focus ring — visible on every interactive element */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  /* Thin custom scrollbars */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-surface-3);
+    border-radius: 8px;
+    border: 2px solid var(--color-bg);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-border-bright);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .grid-texture {
+    background-image:
+      linear-gradient(var(--color-border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
+    background-size: 28px 28px;
+    opacity: 0.25;
+  }
+  /* accent glow used sparingly on the active/playing state */
+  .glow-accent {
+    box-shadow: 0 0 0 1px var(--color-accent-deep), 0 8px 30px -8px rgba(204, 255, 0, 0.45);
+  }
+  .mono-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ── Equalizer / waveform animation used on the now-playing card art ───────── */
+@keyframes eq-bounce {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.eq-bar {
+  transform-origin: bottom;
+  animation: eq-bounce 900ms var(--ease-out-expo) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eq-bar {
+    animation: none;
+    transform: scaleY(0.6);
+  }
+  * {
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: fade-up 0.4s var(--ease-out-expo) both;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-surface-2);
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.04),
+    transparent
+  );
+  animation: shimmer 1.4s infinite;
+}
