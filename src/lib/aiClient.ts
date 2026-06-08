@@ -14,6 +14,12 @@ let cachedMode: DetectedMode | null = null;
 
 export async function detectMode(): Promise<DetectedMode> {
   if (cachedMode) return cachedMode;
+  // Static hosts (e.g. GitHub Pages) have no serverless layer — skip the probe
+  // so we don't log an expected 404. Real hosts (Vercel) still get checked.
+  if (typeof location !== 'undefined' && location.hostname.endsWith('github.io')) {
+    cachedMode = 'local';
+    return cachedMode;
+  }
   try {
     const res = await fetch('/api/recommend', { method: 'GET' });
     if (!res.ok) {
