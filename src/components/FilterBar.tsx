@@ -4,18 +4,33 @@ import { useStore } from '../store/useStore';
 import { filtersActive } from '../lib/scoring';
 import {
   ENERGIES,
+  ERAS,
+  ERA_LABEL,
   FOODS,
   GENRES,
   MOODS,
   SCENES,
   SETTINGS,
+  TEMPO_BANDS,
+  TEMPO_LABEL,
+  VOCALITIES,
+  VOCALITY_LABEL,
   tagLabel,
   ENERGY_LABEL,
 } from '../data/vocab';
 import { Chip } from './Chip';
 import { CloseIcon, SearchIcon } from './icons';
 
-type ArrKey = 'moods' | 'genres' | 'energies' | 'scenes' | 'settings' | 'food';
+type ArrKey =
+  | 'moods'
+  | 'genres'
+  | 'energies'
+  | 'scenes'
+  | 'settings'
+  | 'food'
+  | 'tempo'
+  | 'vocals'
+  | 'eras';
 
 interface MenuDef {
   key: ArrKey;
@@ -29,7 +44,10 @@ const MENUS: MenuDef[] = [
   { key: 'scenes', label: 'Scene', options: SCENES, format: tagLabel },
   { key: 'genres', label: 'Genre', options: GENRES, format: tagLabel },
   { key: 'energies', label: 'Energy', options: ENERGIES, format: (v) => ENERGY_LABEL[v as keyof typeof ENERGY_LABEL] },
+  { key: 'tempo', label: 'Tempo', options: TEMPO_BANDS, format: (v) => TEMPO_LABEL[v as keyof typeof TEMPO_LABEL] },
+  { key: 'vocals', label: 'Vocals', options: VOCALITIES, format: (v) => VOCALITY_LABEL[v as keyof typeof VOCALITY_LABEL] },
   { key: 'settings', label: 'Place', options: SETTINGS, format: tagLabel },
+  { key: 'eras', label: 'Era', options: ERAS, format: (v) => ERA_LABEL[v as keyof typeof ERA_LABEL] },
   { key: 'food', label: 'Food', options: FOODS, format: tagLabel },
 ];
 

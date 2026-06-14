@@ -9,6 +9,7 @@ import type {
   VisualSignals,
 } from '../types';
 import { parseBrief } from './brief';
+import { targetBpmFromPace } from './features';
 
 let idCounter = 0;
 function uid(prefix: string): string {
@@ -39,7 +40,8 @@ function visualToSignals(v: VisualSignals): {
   } else if (bright < 0.32) {
     moods.add('dark');
     moods.add('melancholic');
-    settings.add('neon');
+    // "Neon" implies *saturated* darkness — don't tag a merely dim clip as neon.
+    if (sat > 0.4) settings.add('neon');
   } else {
     moods.add('dreamy');
   }
@@ -55,10 +57,10 @@ function visualToSignals(v: VisualSignals): {
     if (bright < 0.4) scenes.add('night-drive');
   }
 
-  // Saturation ↔ vibrancy
-  if (sat > 0.45) {
-    moods.add('energetic');
-    if (bright > 0.5) moods.add('euphoric');
+  // Saturation ↔ vibrancy (euphoria only when it's also bright; energy comes
+  // from pace below, so we don't double-count it here).
+  if (sat > 0.45 && bright > 0.5) {
+    moods.add('euphoric');
   } else if (sat < 0.18) {
     moods.add('somber');
   }
@@ -126,6 +128,8 @@ export function assembleProfile(input: AssembleInput): MoodProfile {
   const textBlobs: string[] = [];
   if (input.transcript?.text) textBlobs.push(input.transcript.text);
   if (input.brief) textBlobs.push(input.brief);
+  let textBpm: { min: number; max: number } | undefined;
+  let textPrefersInstrumental = false;
   if (textBlobs.length) {
     const parsed = parseBrief(textBlobs.join('. '));
     parsed.moods.forEach((m) => moods.add(m));
@@ -134,8 +138,20 @@ export function assembleProfile(input: AssembleInput): MoodProfile {
     parsed.genres.forEach((g) => genres.add(g));
     parsed.keywords.forEach((k) => keywords.add(k));
     textEnergy = parsed.energy;
+    textBpm = parsed.targetBpm;
+    textPrefersInstrumental = Boolean(parsed.prefersInstrumental);
   }
   input.transcript?.keywords.forEach((k) => keywords.add(k));
+
+  // A clip with substantial voiceover wants a clean instrumental bed.
+  const hasVoiceover =
+    Boolean(input.transcript?.text && input.transcript.text.trim().length > 40) ||
+    scenes.has('vlog-vo-bed');
+
+  // Prefer a cut-rate-derived tempo for videos; fall back to an explicit brief bpm.
+  const targetBpm = input.visual
+    ? targetBpmFromPace(input.visual.pace, input.visual.cutsPerMinute)
+    : textBpm;
 
   const derived: DerivedSignals = {
     moods: [...moods],
@@ -144,6 +160,8 @@ export function assembleProfile(input: AssembleInput): MoodProfile {
     genres: [...genres] as DerivedSignals['genres'],
     energy: mergeEnergy(visualEnergy, textEnergy),
     keywords: [...keywords].slice(0, 28),
+    targetBpm,
+    prefersInstrumental: hasVoiceover || textPrefersInstrumental || undefined,
   };
 
   return {

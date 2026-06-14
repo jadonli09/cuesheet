@@ -8,12 +8,16 @@ import type {
 } from '../types';
 import { emptyFilters } from '../lib/scoring';
 import {
+  loadCardLayout,
   loadState,
   newId,
   saveActiveId,
+  saveCardLayout,
   saveProjects,
 } from '../lib/storage';
 import type { DetectedMode } from '../lib/aiClient';
+
+export type CardLayout = 'grid' | 'rows';
 
 const initial = loadState();
 
@@ -38,6 +42,10 @@ interface AppState {
   filters: FilterState;
   setFilters: (next: FilterState) => void;
   resetFilters: () => void;
+
+  // ── Result layout (grid vs rows) ────────────────────────────────────────────
+  cardLayout: CardLayout;
+  setCardLayout: (layout: CardLayout) => void;
 
   // ── Profile + recommendations ───────────────────────────────────────────────
   profile: MoodProfile | null;
@@ -160,6 +168,12 @@ export const useStore = create<AppState>((set, get) => ({
   filters: emptyFilters(),
   setFilters: (next) => set({ filters: next }),
   resetFilters: () => set({ filters: emptyFilters() }),
+
+  cardLayout: loadCardLayout(),
+  setCardLayout: (layout) => {
+    saveCardLayout(layout);
+    set({ cardLayout: layout });
+  },
 
   profile: null,
   recommendations: [],

@@ -54,8 +54,10 @@ export function SongCard({ song, recommendation, queue, onSimilar }: SongCardPro
   return (
     <article
       ref={ref}
-      className={`group flex flex-col overflow-hidden rounded-[var(--radius-card)] border bg-surface transition-colors duration-200 ${
-        isCurrent ? 'border-accent/70' : 'border-border hover:border-border-bright'
+      className={`group flex flex-col overflow-hidden rounded-[var(--radius-card)] border bg-surface transition-all duration-300 ${
+        isCurrent
+          ? 'border-accent/70 shadow-[0_18px_50px_-22px_rgba(255,157,46,0.55)]'
+          : 'border-border hover:-translate-y-0.5 hover:border-border-bright hover:shadow-[0_18px_44px_-26px_rgba(0,0,0,0.9)]'
       }`}
     >
       {/* ── Artwork / waveform ─────────────────────────────────────────────── */}
@@ -79,24 +81,61 @@ export function SongCard({ song, recommendation, queue, onSimilar }: SongCardPro
           </div>
         )}
 
-        {/* gradient + animated waveform strip while playing */}
+        {/* gradient — also the legibility scrim for the hover tags below */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+        {/* animated waveform strip — only while playing (hover shows tags instead) */}
         {showArt && (
           <div
             className={`pointer-events-none absolute inset-x-3 bottom-3 h-8 transition-opacity duration-300 ${
-              playing ? 'opacity-100' : 'opacity-0 group-hover:opacity-70'
+              playing ? 'opacity-100' : 'opacity-0'
             }`}
           >
             <Waveform seed={song.id} bars={32} playing={playing} />
           </div>
         )}
 
+        {/* tags — laid over the cover, revealed on hover (hidden while playing) */}
+        <div
+          className={`pointer-events-none absolute inset-x-0 bottom-0 flex flex-wrap items-end gap-1 p-2.5 pr-14 transition-all duration-300 ${
+            playing
+              ? 'opacity-0'
+              : 'translate-y-1 opacity-0 group-hover:translate-y-0 group-hover:opacity-100'
+          }`}
+        >
+          <Chip readOnly size="sm" tone="glass" title={ENERGY_LABEL[song.energy]}>
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                song.energy === 'high'
+                  ? 'bg-accent'
+                  : song.energy === 'medium'
+                    ? 'bg-cool'
+                    : 'bg-white/60'
+              }`}
+            />
+            {song.energy}
+            {song.bpm ? <span className="opacity-70 mono-nums"> {song.bpm}</span> : null}
+          </Chip>
+          <Chip readOnly size="sm" tone="glass">{tagLabel(song.genre)}</Chip>
+          {(recommendation?.matched.length
+            ? recommendation.matched.slice(0, 2)
+            : song.moods.slice(0, 2).map(tagLabel)
+          ).map((m) => (
+            <Chip readOnly size="sm" tone="glass" key={m}>
+              {m}
+            </Chip>
+          ))}
+        </div>
+
         {/* score badge */}
         {recommendation && (
-          <div className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-bg/80 px-2 py-1 text-[11px] font-semibold text-accent backdrop-blur mono-nums">
-            {recommendation.fromAI && <SparkIcon size={12} />}
-            {recommendation.score}
-            <span className="text-text-dim">match</span>
+          <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full border border-border-bright/60 bg-bg/80 px-2.5 py-1 text-[11px] font-semibold backdrop-blur">
+            <span className="mono-nums text-accent">{recommendation.score}</span>
+            <span className="kicker text-[8.5px] text-text-dim">match</span>
+            {recommendation.fromAI && (
+              <span className="flex items-center gap-0.5 rounded-full bg-signal/15 px-1.5 py-0.5 text-[8.5px] font-bold tracking-wide text-signal">
+                <SparkIcon size={9} /> AI
+              </span>
+            )}
           </div>
         )}
 
@@ -141,32 +180,6 @@ export function SongCard({ song, recommendation, queue, onSimilar }: SongCardPro
             {song.artist}
             {song.year ? <span className="text-text-dim/60"> · {song.year}</span> : null}
           </p>
-        </div>
-
-        {/* tags / meta */}
-        <div className="flex flex-wrap gap-1.5">
-          <Chip readOnly title={ENERGY_LABEL[song.energy]}>
-            <span
-              className={`h-1.5 w-1.5 rounded-full ${
-                song.energy === 'high'
-                  ? 'bg-accent'
-                  : song.energy === 'medium'
-                    ? 'bg-cool'
-                    : 'bg-text-dim'
-              }`}
-            />
-            {song.energy}
-            {song.bpm ? <span className="text-text-faint mono-nums"> {song.bpm}</span> : null}
-          </Chip>
-          <Chip readOnly>{tagLabel(song.genre)}</Chip>
-          {(recommendation?.matched.length
-            ? recommendation.matched.slice(0, 2)
-            : song.moods.slice(0, 2).map(tagLabel)
-          ).map((m) => (
-            <Chip readOnly key={m}>
-              {m}
-            </Chip>
-          ))}
         </div>
 
         {recommendation && (

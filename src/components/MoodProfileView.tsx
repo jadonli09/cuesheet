@@ -35,8 +35,8 @@ export function MoodProfileView({ profile }: { profile: MoodProfile }) {
     <div className="rounded-[var(--radius-card)] border border-border bg-surface p-5 sm:p-6">
       <div className="mb-5 flex items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-            {profile.source === 'video' ? 'Project Mood Profile' : 'Brief Profile'}
+          <p className="kicker text-signal">
+            {profile.source === 'video' ? 'Project mood profile' : 'Brief profile'}
           </p>
           <h2 className="mt-1 font-display text-2xl text-text">{profile.label}</h2>
         </div>
@@ -106,6 +106,24 @@ export function MoodProfileView({ profile }: { profile: MoodProfile }) {
               )}
             </div>
           </div>
+
+          {(d.targetBpm || d.prefersInstrumental) && (
+            <div>
+              <p className="mb-2 text-[12px] font-medium text-text-dim">Targeting</p>
+              <div className="flex flex-wrap gap-1.5">
+                {d.targetBpm && (
+                  <Chip readOnly title="Songs near this tempo (incl. half/double-time) rank up">
+                    ~{Math.round((d.targetBpm.min + d.targetBpm.max) / 2)} bpm
+                  </Chip>
+                )}
+                {d.prefersInstrumental && (
+                  <Chip readOnly title="Voiceover detected — instrumental beds preferred">
+                    Instrumental bed
+                  </Chip>
+                )}
+              </div>
+            </div>
+          )}
 
           {t && (
             <div>

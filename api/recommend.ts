@@ -35,6 +35,12 @@ interface Pick {
   artist: string;
   title: string;
   why: string;
+  /** Structured tags so the pick can be re-scored & filtered like a catalog song. */
+  moods?: string[];
+  energy?: string;
+  scene?: string;
+  bpm?: number;
+  vocal?: boolean;
 }
 
 const MODEL = 'claude-sonnet-4-6';
@@ -79,9 +85,16 @@ export default async function handler(req: ReqLike, res: ResLike): Promise<void>
     'You are an expert music supervisor for short-form video. Given a mood ' +
     'profile of a clip, suggest REAL, well-known, commercially released songs ' +
     '(real artist + real title) that would soundtrack it well. Favor ' +
-    'recognizable, licensable tracks across eras and genres. Do NOT invent ' +
-    'songs. Return STRICT JSON only: an object {"picks":[{"artist","title","why"}]} ' +
-    'with 8 items. "why" is one concise sentence on why it fits this footage.';
+    'recognizable, licensable tracks. Do NOT invent songs. Maximize VARIETY: ' +
+    'no two picks by the same artist, and spread across genres and eras. If the ' +
+    'profile wants an instrumental bed (voiceover/dialogue), prefer instrumental ' +
+    'or low-vocal tracks. Return STRICT JSON only: an object with key "picks", an ' +
+    'array of 8 items. Each item: {"artist": string, "title": string, "why": ' +
+    'one concise sentence on why it fits, "moods": up to 3 from [uplifting, ' +
+    'hopeful, triumphant, euphoric, energetic, playful, dreamy, chill, romantic, ' +
+    'sensual, nostalgic, melancholic, somber, dark, tense, eerie, gritty, epic], ' +
+    '"energy": one of [low, medium, high], "scene": short scene tag, "bpm": ' +
+    'integer estimate, "vocal": boolean (true if it has prominent lead vocals)}.';
 
   // Build content: text + optional keyframe image for vision.
   const content: unknown[] = [];
@@ -153,7 +166,16 @@ function parsePicks(text: string): Pick[] {
     const obj = JSON.parse(text.slice(start, end + 1)) as { picks?: Pick[] };
     return (obj.picks ?? [])
       .filter((p) => p && p.artist && p.title)
-      .map((p) => ({ artist: String(p.artist), title: String(p.title), why: String(p.why ?? '') }))
+      .map((p) => ({
+        artist: String(p.artist),
+        title: String(p.title),
+        why: String(p.why ?? ''),
+        moods: Array.isArray(p.moods) ? p.moods.map(String).slice(0, 3) : undefined,
+        energy: typeof p.energy === 'string' ? p.energy : undefined,
+        scene: typeof p.scene === 'string' ? p.scene : undefined,
+        bpm: typeof p.bpm === 'number' && p.bpm > 0 ? Math.round(p.bpm) : undefined,
+        vocal: typeof p.vocal === 'boolean' ? p.vocal : undefined,
+      }))
       .slice(0, 12);
   } catch {
     return [];

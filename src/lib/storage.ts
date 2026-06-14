@@ -2,6 +2,7 @@ import type { Project } from '../types';
 
 const PROJECTS_KEY = 'cuesheet:projects:v1';
 const ACTIVE_KEY = 'cuesheet:activeProject:v1';
+const LAYOUT_KEY = 'cuesheet:cardLayout:v1';
 
 interface PersistShape {
   projects: Project[];
@@ -32,6 +33,22 @@ export function saveActiveId(id: string | null): void {
   try {
     if (id) localStorage.setItem(ACTIVE_KEY, id);
     else localStorage.removeItem(ACTIVE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function loadCardLayout(): 'grid' | 'rows' {
+  try {
+    return localStorage.getItem(LAYOUT_KEY) === 'rows' ? 'rows' : 'grid';
+  } catch {
+    return 'grid';
+  }
+}
+
+export function saveCardLayout(layout: 'grid' | 'rows'): void {
+  try {
+    localStorage.setItem(LAYOUT_KEY, layout);
   } catch {
     /* ignore */
   }

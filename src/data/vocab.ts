@@ -1,10 +1,13 @@
 import type {
   Energy,
+  Era,
   Food,
   Genre,
   Mood,
   SceneFit,
   Setting,
+  TempoBand,
+  Vocality,
 } from '../types';
 
 /** Turn a kebab token into a Title Case label. */
@@ -59,6 +62,12 @@ export const GENRES: Genre[] = [
 ];
 
 export const ENERGIES: Energy[] = ['low', 'medium', 'high'];
+
+export const TEMPO_BANDS: TempoBand[] = ['slow', 'mid', 'upbeat', 'fast'];
+
+export const VOCALITIES: Vocality[] = ['instrumental', 'vocal'];
+
+export const ERAS: Era[] = ['60s-earlier', '70s-80s', '90s', '2000s', '2010s', '2020s'];
 
 export const SCENES: SceneFit[] = [
   'travel-montage',
@@ -135,4 +144,25 @@ export const ENERGY_LABEL: Record<Energy, string> = {
   low: 'Low / Calm',
   medium: 'Medium',
   high: 'High / Driving',
+};
+
+export const TEMPO_LABEL: Record<TempoBand, string> = {
+  slow: 'Slow · <90',
+  mid: 'Mid · 90–115',
+  upbeat: 'Upbeat · 116–135',
+  fast: 'Fast · 135+',
+};
+
+export const VOCALITY_LABEL: Record<Vocality, string> = {
+  instrumental: 'Instrumental',
+  vocal: 'Vocal',
+};
+
+export const ERA_LABEL: Record<Era, string> = {
+  '60s-earlier': "’60s & earlier",
+  '70s-80s': "’70s–’80s",
+  '90s': "’90s",
+  '2000s': '2000s',
+  '2010s': '2010s',
+  '2020s': '2020s',
 };

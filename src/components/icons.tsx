@@ -61,6 +61,12 @@ export const BrowseIcon = ({ size = 20, className }: IconProps) => (
     <rect x="13" y="13" width="7" height="7" rx="1.5" />
   </svg>
 );
+export const RowsIcon = ({ size = 20, className }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <rect x="4" y="5" width="16" height="4.5" rx="1.4" />
+    <rect x="4" y="14.5" width="16" height="4.5" rx="1.4" />
+  </svg>
+);
 export const FilmIcon = ({ size = 20, className }: IconProps) => (
   <svg {...base(size)} className={className}>
     <rect x="3" y="4" width="18" height="16" rx="2" />
@@ -96,5 +102,30 @@ export const ExternalIcon = ({ size = 16, className }: IconProps) => (
 export const CloseIcon = ({ size = 18, className }: IconProps) => (
   <svg {...base(size)} className={className}>
     <path d="M6 6l12 12M18 6L6 18" />
+  </svg>
+);
+export const LockIcon = ({ size = 20, className }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <rect x="4.5" y="10.5" width="15" height="10" rx="2.2" />
+    <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" />
+    <circle cx="12" cy="15.2" r="1.3" fill="currentColor" stroke="none" />
+  </svg>
+);
+export const UnlockIcon = ({ size = 20, className }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <rect x="4.5" y="10.5" width="15" height="10" rx="2.2" />
+    <path d="M8 10.5V7.5a4 4 0 0 1 7.7-1.5" />
+    <circle cx="12" cy="15.2" r="1.3" fill="currentColor" stroke="none" />
+  </svg>
+);
+export const BackspaceIcon = ({ size = 20, className }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <path d="M9 5h11a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H9l-6-7z" />
+    <path d="M16 9.5l-5 5M11 9.5l5 5" />
+  </svg>
+);
+export const WaveIcon = ({ size = 20, className }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <path d="M3 12h2.5l2-6 3 14 3-11 2 5H21" />
   </svg>
 );

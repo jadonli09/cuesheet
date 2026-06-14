@@ -2,10 +2,16 @@ import type {
   DerivedSignals,
   Energy,
   FilterState,
+  Genre,
+  Mood,
   Recommendation,
+  SceneFit,
+  Setting,
   Song,
 } from '../types';
 import { tagLabel } from '../data/vocab';
+import { bpmCloseness, era, tempoBand, vocality } from './features';
+import { STOP, vocabHits } from './lexicon';
 
 const ENERGY_RANK: Record<Energy, number> = { low: 0, medium: 1, high: 2 };
 
@@ -41,6 +47,7 @@ const WEIGHTS = {
   setting: 1.7,
   genre: 1.6,
   energy: 1.8,
+  tempo: 1.6,
   keyword: 1.1,
 } as const;
 
@@ -66,6 +73,14 @@ export function scoreSong(song: Song, signals: DerivedSignals): ScoreResult {
   );
 
   const eProx = signals.energy ? energyProximity(song.energy, signals.energy) : 0;
+  const tempoFit = bpmCloseness(song.bpm, signals.targetBpm);
+
+  // Voiceover bed: reward instrumentals, dock vocal-forward tracks.
+  const isInstrumental = vocality(song) === 'instrumental';
+  let vocalAdj = 0;
+  if (signals.prefersInstrumental) {
+    vocalAdj = isInstrumental ? WEIGHTS.genre * 0.8 : -WEIGHTS.scene * 0.7;
+  }
 
   let raw = 0;
   raw += matchedScenes.length * WEIGHTS.scene;
@@ -73,7 +88,9 @@ export function scoreSong(song: Song, signals: DerivedSignals): ScoreResult {
   raw += matchedSettings.length * WEIGHTS.setting;
   raw += genreMatch ? WEIGHTS.genre : 0;
   raw += eProx * WEIGHTS.energy;
+  raw += tempoFit * WEIGHTS.tempo;
   raw += Math.min(matchedKeywords.length, 3) * WEIGHTS.keyword;
+  raw += vocalAdj;
 
   // Normalize against a generous theoretical ceiling so good matches land 60–95.
   const ceiling =
@@ -82,14 +99,17 @@ export function scoreSong(song: Song, signals: DerivedSignals): ScoreResult {
     1 * WEIGHTS.setting +
     WEIGHTS.genre +
     WEIGHTS.energy +
+    WEIGHTS.tempo +
     2 * WEIGHTS.keyword;
-  const score = Math.round(Math.min(100, (raw / ceiling) * 100));
+  const score = Math.round(Math.max(0, Math.min(100, (raw / ceiling) * 100)));
 
   const matched = [
     ...matchedScenes.map(tagLabel),
     ...matchedMoods.map(tagLabel),
     ...matchedSettings.map(tagLabel),
     ...(genreMatch ? [tagLabel(song.genre)] : []),
+    ...(tempoFit >= 0.66 ? ['on-tempo'] : []),
+    ...(signals.prefersInstrumental && isInstrumental ? ['instrumental'] : []),
   ];
 
   return {
@@ -103,6 +123,8 @@ export function scoreSong(song: Song, signals: DerivedSignals): ScoreResult {
       matchedSettings,
       genreMatch,
       eProx,
+      tempoFit,
+      isInstrumental,
       matchedKeywords,
     }),
   };
@@ -116,6 +138,8 @@ function buildRationale(ctx: {
   matchedSettings: string[];
   genreMatch: boolean;
   eProx: number;
+  tempoFit: number;
+  isInstrumental: boolean;
   matchedKeywords: string[];
 }): string {
   const { song, signals, matchedScenes, matchedMoods, matchedSettings, eProx } =
@@ -136,6 +160,12 @@ function buildRationale(ctx: {
   } else if (eProx >= 0.5 && signals.energy) {
     parts.push(`sits near your ${signals.energy}-energy target`);
   }
+  if (ctx.tempoFit >= 0.66 && song.bpm) {
+    parts.push(`locks to your cut's tempo (${song.bpm} bpm)`);
+  }
+  if (signals.prefersInstrumental && ctx.isInstrumental) {
+    parts.push('a clean instrumental bed under voiceover');
+  }
   if (ctx.matchedKeywords.length) {
     parts.push(`echoes "${ctx.matchedKeywords.slice(0, 2).join('", "')}"`);
   }
@@ -151,13 +181,49 @@ function cap(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+/**
+ * Greedy diversity pass (MMR-lite): keeps the strongest picks but demotes the
+ * Nth song from the same artist / an over-represented genre, so a shortlist
+ * doesn't come back as ten cuts by one act.
+ */
+export function diversify(
+  recs: Recommendation[],
+  limit: number,
+): Recommendation[] {
+  const pool = [...recs];
+  const out: Recommendation[] = [];
+  const artistSeen = new Map<string, number>();
+  const genreSeen = new Map<string, number>();
+
+  const penalty = (r: Recommendation): number =>
+    (artistSeen.get(r.song.artist) ?? 0) * 9 +
+    Math.max(0, (genreSeen.get(r.song.genre) ?? 0) - 2) * 3;
+
+  while (out.length < limit && pool.length) {
+    let bestIdx = 0;
+    let bestVal = -Infinity;
+    for (let i = 0; i < pool.length; i++) {
+      const v = pool[i].score - penalty(pool[i]);
+      if (v > bestVal) {
+        bestVal = v;
+        bestIdx = i;
+      }
+    }
+    const [chosen] = pool.splice(bestIdx, 1);
+    out.push(chosen);
+    artistSeen.set(chosen.song.artist, (artistSeen.get(chosen.song.artist) ?? 0) + 1);
+    genreSeen.set(chosen.song.genre, (genreSeen.get(chosen.song.genre) ?? 0) + 1);
+  }
+  return out;
+}
+
 /** Rank the whole catalog against signals; returns top `limit` recommendations. */
 export function rankCatalog(
   catalog: Song[],
   signals: DerivedSignals,
   limit = 40,
 ): Recommendation[] {
-  return catalog
+  const scored = catalog
     .map((song) => {
       const r = scoreSong(song, signals);
       return {
@@ -169,11 +235,38 @@ export function rankCatalog(
     })
     .filter((r) => r.score > 8)
     .sort((a, b) => b.score - a.score)
-    .slice(0, limit);
+    // Diversify from a deeper pool than we ship so swaps have somewhere to pull from.
+    .slice(0, Math.max(limit * 2, limit));
+
+  return diversify(scored, limit);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Browse hard-filtering
+// Browse search → canonical tags + literal terms (synonym-aware).
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface QuerySignals {
+  active: boolean;
+  terms: string[];
+  tags: { moods: Mood[]; scenes: SceneFit[]; settings: Setting[]; genres: Genre[] };
+}
+
+export function parseQuery(query: string): QuerySignals {
+  const raw = query.trim();
+  if (!raw) {
+    return { active: false, terms: [], tags: { moods: [], scenes: [], settings: [], genres: [] } };
+  }
+  const hits = vocabHits(raw);
+  const terms = hits.tokens.filter((t) => t.length > 1 && !STOP.has(t));
+  return {
+    active: true,
+    terms,
+    tags: { moods: hits.moods, scenes: hits.scenes, settings: hits.settings, genres: hits.genres },
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Browse filtering — ranked, with graceful degradation to near-matches.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function emptyFilters(): FilterState {
@@ -184,6 +277,9 @@ export function emptyFilters(): FilterState {
     scenes: [],
     settings: [],
     food: [],
+    tempo: [],
+    vocals: [],
+    eras: [],
     query: '',
   };
 }
@@ -196,30 +292,182 @@ export function filtersActive(f: FilterState): boolean {
     f.scenes.length > 0 ||
     f.settings.length > 0 ||
     f.food.length > 0 ||
+    f.tempo.length > 0 ||
+    f.vocals.length > 0 ||
+    f.eras.length > 0 ||
     f.query.trim().length > 0
   );
 }
 
-/** AND across categories, OR within each. Query matches the song text blob. */
-export function applyFilters(catalog: Song[], f: FilterState): Song[] {
-  const q = f.query.trim().toLowerCase();
-  return catalog.filter((song) => {
-    if (f.moods.length && !f.moods.some((m) => song.moods.includes(m)))
-      return false;
-    if (f.genres.length && !f.genres.includes(song.genre)) return false;
-    if (f.energies.length && !f.energies.includes(song.energy)) return false;
-    if (f.scenes.length && !f.scenes.some((s) => song.sceneFit.includes(s)))
-      return false;
-    if (f.settings.length && !f.settings.some((s) => song.settings.includes(s)))
-      return false;
-    if (
-      f.food.length &&
-      !f.food.some((s) => (song.food ?? []).includes(s))
+// Per-facet weight for ordering filtered results (independent of the recommender).
+const FW = {
+  mood: 2.6,
+  scene: 3.0,
+  setting: 1.6,
+  genre: 1.8,
+  food: 1.4,
+  vocal: 1.6,
+  era: 1.0,
+  energy: 1.8,
+  tempo: 1.4,
+  query: 1.4,
+} as const;
+
+interface FacetMatch {
+  total: number; // active categorical facets (excl. query)
+  satisfied: number; // how many are satisfied
+  relevance: number; // ordering score
+  queryOk: boolean; // query is a hard gate when present
+}
+
+function facetMatch(song: Song, f: FilterState, q: QuerySignals): FacetMatch {
+  let total = 0;
+  let satisfied = 0;
+  let relevance = 0;
+
+  if (f.moods.length) {
+    total++;
+    const m = overlap(song.moods, f.moods);
+    if (m.length) {
+      satisfied++;
+      relevance += FW.mood * Math.min(m.length, 2);
+    }
+  }
+  if (f.scenes.length) {
+    total++;
+    const m = overlap(song.sceneFit, f.scenes);
+    if (m.length) {
+      satisfied++;
+      relevance += FW.scene * Math.min(m.length, 2);
+    }
+  }
+  if (f.genres.length) {
+    total++;
+    if (f.genres.includes(song.genre)) {
+      satisfied++;
+      relevance += FW.genre;
+    }
+  }
+  if (f.settings.length) {
+    total++;
+    const m = overlap(song.settings, f.settings);
+    if (m.length) {
+      satisfied++;
+      relevance += FW.setting * Math.min(m.length, 2);
+    }
+  }
+  if (f.food.length) {
+    total++;
+    const m = overlap(song.food ?? [], f.food);
+    if (m.length) {
+      satisfied++;
+      relevance += FW.food;
+    }
+  }
+  if (f.vocals.length) {
+    total++;
+    if (f.vocals.includes(vocality(song))) {
+      satisfied++;
+      relevance += FW.vocal;
+    }
+  }
+  if (f.eras.length) {
+    total++;
+    const e = era(song.year);
+    if (e && f.eras.includes(e)) {
+      satisfied++;
+      relevance += FW.era;
+    }
+  }
+  if (f.tempo.length) {
+    total++;
+    const tb = tempoBand(song.bpm);
+    if (tb && f.tempo.includes(tb)) {
+      satisfied++;
+      relevance += FW.tempo;
+    }
+  }
+  if (f.energies.length) {
+    total++;
+    if (f.energies.includes(song.energy)) {
+      satisfied++;
+      relevance += FW.energy;
+    } else {
+      // Ordinal credit for an adjacent energy — ranks up without satisfying.
+      const prox = Math.max(...f.energies.map((e) => energyProximity(song.energy, e)));
+      relevance += FW.energy * 0.4 * prox;
+    }
+  }
+
+  let queryOk = true;
+  if (q.active) {
+    const text = songText(song);
+    const termHit = q.terms.some((t) => text.includes(t));
+    const tagHit =
+      q.tags.moods.some((m) => song.moods.includes(m)) ||
+      q.tags.scenes.some((s) => song.sceneFit.includes(s)) ||
+      q.tags.settings.some((s) => song.settings.includes(s)) ||
+      q.tags.genres.includes(song.genre);
+    queryOk = termHit || tagHit;
+    if (queryOk) relevance += FW.query * ((termHit ? 1 : 0) + (tagHit ? 1 : 0));
+  }
+
+  // Gentle recency tiebreak so equal matches don't fall in arbitrary catalog order.
+  if (song.year) relevance += Math.min(song.year, 2025) / 2025 / 3;
+
+  return { total, satisfied, relevance, queryOk };
+}
+
+export interface BrowseResult {
+  results: Song[];
+  /** True when exact AND-matches were thin and near-matches were folded in. */
+  relaxed: boolean;
+  exactCount: number;
+}
+
+/** How many close-but-imperfect matches to surface before showing none. */
+const NEAR_FLOOR = 12;
+
+/**
+ * Filter the catalog by the active facets, ranked by relevance. When the strict
+ * AND-match is thin, near-matches (missing at most one facet) are folded in and
+ * `relaxed` is set, so the user never hits a dead-end empty grid by accident.
+ */
+export function browseFilter(catalog: Song[], f: FilterState): BrowseResult {
+  if (!filtersActive(f)) {
+    return { results: catalog, relaxed: false, exactCount: catalog.length };
+  }
+  const q = parseQuery(f.query);
+  const scored = catalog.map((song) => ({ song, m: facetMatch(song, f, q) }));
+
+  const byRelevance = (a: { m: FacetMatch }, b: { m: FacetMatch }) =>
+    b.m.relevance - a.m.relevance;
+
+  const exact = scored
+    .filter((s) => s.m.queryOk && s.m.satisfied === s.m.total)
+    .sort(byRelevance);
+
+  // One active facet (or none + a query): exact set is already the right answer.
+  const total = exact[0]?.m.total ?? scored[0]?.m.total ?? 0;
+  if (exact.length >= NEAR_FLOOR || total <= 1) {
+    return {
+      results: exact.map((s) => s.song),
+      relaxed: false,
+      exactCount: exact.length,
+    };
+  }
+
+  const near = scored
+    .filter(
+      (s) => s.m.queryOk && s.m.satisfied < s.m.total && s.m.satisfied >= s.m.total - 1,
     )
-      return false;
-    if (q && !songText(song).includes(q)) return false;
-    return true;
-  });
+    .sort(byRelevance);
+
+  return {
+    results: [...exact.map((s) => s.song), ...near.map((s) => s.song)],
+    relaxed: near.length > 0,
+    exactCount: exact.length,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -238,6 +486,7 @@ export function similarSongs(
     genres: [seed.genre],
     energy: seed.energy,
     keywords: seed.instrumentation,
+    targetBpm: seed.bpm ? { min: seed.bpm - 16, max: seed.bpm + 16 } : undefined,
   };
   return rankCatalog(
     catalog.filter((s) => s.id !== seed.id),

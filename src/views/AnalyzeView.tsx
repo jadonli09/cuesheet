@@ -11,7 +11,8 @@ import { assembleProfile } from '../lib/profile';
 import { getRecommendations } from '../lib/recommend';
 import { UploadDropzone } from '../components/UploadDropzone';
 import { MoodProfileView } from '../components/MoodProfileView';
-import { SparkIcon } from '../components/icons';
+import { PinGate } from '../components/PinGate';
+import { SparkIcon, WaveIcon } from '../components/icons';
 
 interface AnalyzeViewProps {
   onResults: () => void;
@@ -32,6 +33,10 @@ export function AnalyzeView({ onResults }: AnalyzeViewProps) {
   const mode = useStore((s) => s.mode);
   const setProfile = useStore((s) => s.setProfile);
   const setRecommendations = useStore((s) => s.setRecommendations);
+  // Unlock is intentionally LOCAL + ephemeral: this view unmounts when you leave
+  // the Analyze tab, so the access code is required again on every visit. It is
+  // never persisted (no localStorage), so a reload re-locks too.
+  const [unlocked, setUnlocked] = useState(false);
 
   // ── Video state ─────────────────────────────────────────────────────────────
   const [fileName, setFileName] = useState<string | null>(null);
@@ -157,13 +162,31 @@ export function AnalyzeView({ onResults }: AnalyzeViewProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="font-display text-3xl text-text sm:text-4xl">Build a mood profile</h1>
-        <p className="text-[14px] text-text-dim">
-          Drop a clip to read its visuals & voiceover, or describe the vibe in words. Then we rank the catalog against it.
+      <header className="flex flex-col gap-2">
+        <span className="kicker flex items-center gap-2 text-signal">
+          <WaveIcon size={14} /> AI cue engine
+        </span>
+        <h1 className="font-display text-3xl leading-[0.95] text-text sm:text-4xl">
+          Build a <span className="text-grade">mood profile</span>
+        </h1>
+        <p className="max-w-xl text-[14px] leading-relaxed text-text-dim">
+          Drop a clip to read its visuals &amp; voiceover, or describe the vibe in words. Then we rank the catalog against it — every pick comes with a reason.
         </p>
       </header>
 
+      {!unlocked ? (
+        <PinGate onUnlock={() => setUnlocked(true)} />
+      ) : (
+        <div className="animate-reveal flex flex-col gap-6">
+          {renderTools()}
+        </div>
+      )}
+    </div>
+  );
+
+  function renderTools() {
+    return (
+      <>
       {/* segmented control */}
       <div className="inline-flex w-fit rounded-full border border-border bg-surface-2 p-1">
         {(['video', 'brief'] as const).map((s) => (
@@ -352,6 +375,7 @@ export function AnalyzeView({ onResults }: AnalyzeViewProps) {
           </button>
         </div>
       )}
-    </div>
-  );
+      </>
+    );
+  }
 }

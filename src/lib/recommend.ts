@@ -1,7 +1,7 @@
 import type { MoodProfile, Recommendation } from '../types';
 import type { DetectedMode } from './aiClient';
 import { CATALOG } from '../data/catalog';
-import { rankCatalog } from './scoring';
+import { diversify, rankCatalog } from './scoring';
 import { aiRecommend } from './aiClient';
 
 /**
@@ -25,8 +25,13 @@ export async function getRecommendations(
       keyframeDataUrl,
     });
     if (!ai.length) return local;
+    // Merge by honest score (AI picks are re-scored against the profile), then
+    // run the diversity pass so the board isn't dominated by one artist/genre.
     const seen = new Set(ai.map((r) => r.song.id));
-    return [...ai, ...local.filter((r) => !seen.has(r.song.id))].slice(0, 48);
+    const merged = [...ai, ...local.filter((r) => !seen.has(r.song.id))].sort(
+      (a, b) => b.score - a.score,
+    );
+    return diversify(merged, 48);
   } catch {
     return local;
   }

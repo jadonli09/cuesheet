@@ -45,6 +45,21 @@ export type Mood =
 
 export type Energy = 'low' | 'medium' | 'high';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Derived facets — computed at load time from existing Song fields (bpm, year,
+// instrumentation). No manual re-tagging required; these power the new Tempo /
+// Vocals / Era filters and tempo-aware scoring. See lib/features.ts.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Coarse tempo band derived from bpm. */
+export type TempoBand = 'slow' | 'mid' | 'upbeat' | 'fast';
+
+/** Whether a track carries prominent lead vocals (vs. an instrumental bed). */
+export type Vocality = 'instrumental' | 'vocal';
+
+/** Release-era bucket derived from year. */
+export type Era = '60s-earlier' | '70s-80s' | '90s' | '2000s' | '2010s' | '2020s';
+
 export type SceneFit =
   | 'travel-montage'
   | 'food-cooking'
@@ -181,6 +196,11 @@ export interface DerivedSignals {
   genres: Genre[];
   energy: Energy;
   keywords: string[];
+  /** Target tempo window (BPM) inferred from a clip's cut rate / pace, or an
+   *  explicit "120 bpm" in a brief. Songs near it (incl. half/double-time) rank up. */
+  targetBpm?: { min: number; max: number };
+  /** True when the cut wants a clean instrumental bed (voiceover / dialogue). */
+  prefersInstrumental?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -231,6 +251,12 @@ export interface FilterState {
   scenes: SceneFit[];
   settings: Setting[];
   food: Food[];
+  /** Tempo bands (derived from bpm). */
+  tempo: TempoBand[];
+  /** Instrumental vs. vocal (derived from instrumentation). */
+  vocals: Vocality[];
+  /** Release eras (derived from year). */
+  eras: Era[];
   query: string;
 }
 

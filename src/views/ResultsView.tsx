@@ -4,6 +4,7 @@ import { CATALOG } from '../data/catalog';
 import { useStore } from '../store/useStore';
 import { similarSongs } from '../lib/scoring';
 import { SongGrid } from '../components/SongGrid';
+import { LayoutToggle } from '../components/LayoutToggle';
 import { MoodProfileView } from '../components/MoodProfileView';
 import { EmptyState } from '../components/EmptyState';
 import { ModeBadge } from '../components/ModeBadge';
@@ -16,6 +17,7 @@ interface ResultsViewProps {
 export function ResultsView({ onAnalyze }: ResultsViewProps) {
   const profile = useStore((s) => s.profile);
   const recommendations = useStore((s) => s.recommendations);
+  const cardLayout = useStore((s) => s.cardLayout);
   const [showProfile, setShowProfile] = useState(true);
   const [similarOf, setSimilarOf] = useState<Song | null>(null);
 
@@ -48,15 +50,21 @@ export function ResultsView({ onAnalyze }: ResultsViewProps) {
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-3xl text-text sm:text-4xl">Recommendations</h1>
-          <p className="mt-1 text-[14px] text-text-dim">
-            {recommendations.length} ranked picks for{' '}
+          <span className="kicker text-signal">Ranked picks · scored</span>
+          <h1 className="mt-2 font-display text-3xl text-text sm:text-4xl">
+            The <span className="text-grade">shortlist</span> board
+          </h1>
+          <p className="mt-1.5 text-[14px] text-text-dim">
+            <span className="font-mono text-text">{recommendations.length}</span> ranked picks for{' '}
             <span className="text-text">“{profile.label}”</span>
-            {aiCount > 0 && <> · {aiCount} fresh from AI</>}
+            {aiCount > 0 && (
+              <> · <span className="text-signal">{aiCount} fresh from AI</span></>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <ModeBadge />
+          <LayoutToggle />
           <button
             onClick={() => setShowProfile((v) => !v)}
             className="rounded-full border border-border px-4 py-2 text-[13px] text-text-dim transition-colors hover:border-border-bright hover:text-text"
@@ -78,6 +86,7 @@ export function ResultsView({ onAnalyze }: ResultsViewProps) {
         recommendations={recommendations}
         queue={recommendations.map((r) => r.song)}
         onSimilar={setSimilarOf}
+        layout={cardLayout}
       />
 
       {similarOf && (
@@ -86,7 +95,7 @@ export function ResultsView({ onAnalyze }: ResultsViewProps) {
           <div className="relative z-10 max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-t-3xl border border-border bg-surface p-5 sm:rounded-3xl sm:p-6">
             <div className="mb-4 flex items-start justify-between">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">Similar to</p>
+                <p className="kicker text-signal">Similar to</p>
                 <h2 className="font-display text-xl text-text">
                   {similarOf.title} <span className="text-text-dim">— {similarOf.artist}</span>
                 </h2>

@@ -3,6 +3,10 @@ import { BATCH1 } from './batch1';
 import { BATCH2 } from './batch2';
 import { BATCH3 } from './batch3';
 import { BATCH4 } from './batch4';
+import { BATCH5 } from './batch5';
+import { BATCH6 } from './batch6';
+import { BATCH7 } from './batch7';
+import { BATCH8 } from './batch8';
 
 const BASE: Song[] = [
   {
@@ -52,7 +56,7 @@ const BASE: Song[] = [
     genre: 'hip-hop',
     moods: ['chill', 'nostalgic', 'gritty'],
     energy: 'medium',
-    bpm: 143,
+    bpm: 72,
     sceneFit: ['urban', 'vlog-vo-bed', 'night-drive'],
     settings: ['city', 'studio'],
     instrumentation: ['guitar', '808', 'drums', 'vocals'],
@@ -393,7 +397,7 @@ const BASE: Song[] = [
     genre: 'jazz',
     moods: ['chill', 'nostalgic', 'sensual'],
     energy: 'low',
-    bpm: 136,
+    bpm: 68,
     sceneFit: ['food-cooking', 'vlog-vo-bed', 'urban'],
     settings: ['city', 'studio', 'new-york'],
     food: ['wine', 'fine-dining'],
@@ -1144,7 +1148,7 @@ const BASE: Song[] = [
     genre: 'jazz',
     moods: ['chill', 'playful', 'nostalgic'],
     energy: 'medium',
-    bpm: 174,
+    bpm: 87,
     sceneFit: ['food-cooking', 'vlog-vo-bed', 'urban'],
     settings: ['city', 'studio'],
     food: ['coffee', 'cocktails'],
@@ -1226,7 +1230,7 @@ const BASE: Song[] = [
     bpm: 120,
     sceneFit: ['action', 'slow-motion', 'credits'],
     settings: ['city', 'studio'],
-    instrumentation: ['strings', 'piano', 'choir'],
+    instrumentation: ['strings', 'piano'],
   },
   {
     id: 'jon-hopkins-immunity',
@@ -1627,7 +1631,7 @@ const BASE: Song[] = [
     genre: 'pop',
     moods: ['nostalgic', 'melancholic', 'playful'],
     energy: 'high',
-    bpm: 174,
+    bpm: 87,
     sceneFit: ['travel-montage', 'vlog-vo-bed', 'sunset'],
     settings: ['city', 'beach'],
     instrumentation: ['synth', 'guitar', 'drums', 'vocals'],
@@ -2201,15 +2205,27 @@ const BASE: Song[] = [
 ];
 
 /**
- * The shipped catalog = the curated base + four batches of trending/popular
- * tracks, with duplicate ids and duplicate artist+title pairs removed, capped at
- * 500 songs. Base entries come first so they always survive de-duplication.
+ * The shipped catalog = the curated base + eight batches spanning current hits
+ * and the back catalog (classic rock, the 90s, soul/funk/jazz, classical/score,
+ * country/folk, global, electronic, the 2000s). Duplicate ids and duplicate
+ * artist+title pairs are removed, capped at 1000. Base entries come first so
+ * they always survive de-duplication.
  */
 function buildCatalog(): Song[] {
   const seenId = new Set<string>();
   const seenKey = new Set<string>();
   const out: Song[] = [];
-  for (const song of [...BASE, ...BATCH1, ...BATCH2, ...BATCH3, ...BATCH4]) {
+  for (const song of [
+    ...BASE,
+    ...BATCH1,
+    ...BATCH2,
+    ...BATCH3,
+    ...BATCH4,
+    ...BATCH5,
+    ...BATCH6,
+    ...BATCH7,
+    ...BATCH8,
+  ]) {
     const key = `${song.artist}::${song.title}`
       .toLowerCase()
       .replace(/\s+/g, ' ')
@@ -2218,7 +2234,7 @@ function buildCatalog(): Song[] {
     seenId.add(song.id);
     seenKey.add(key);
     out.push(song);
-    if (out.length >= 500) break;
+    if (out.length >= 1000) break;
   }
   return out;
 }

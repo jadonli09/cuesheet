@@ -75,7 +75,7 @@ export function ProjectView({ onBrowse }: ProjectViewProps) {
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">Project shortlist</p>
+          <p className="kicker text-signal">Project shortlist · saved locally</p>
           {renaming ? (
             <input
               autoFocus

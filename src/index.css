@@ -1,36 +1,50 @@
 @import 'tailwindcss';
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   CueSheet design system — dark, editorial, pro-creative-tool.
-   Base: deep charcoal. Single vivid accent: acid lime. 4/8px spacing grid.
-   Display: Space Grotesk. Body: IBM Plex Sans. (Bundled via @fontsource.)
+   CueSheet — "The Cutting Room" design system.
+   A cinematic music-supervision console: warm film-room dark, graded in the
+   editor's own teal-&-amber palette. Amber = music / warmth / analog.
+   Teal = signal / tech / AI. Type: Bricolage Grotesque (display),
+   Hanken Grotesk (body), IBM Plex Mono (timecode, scores, the PIN).
    ───────────────────────────────────────────────────────────────────────────── */
 
 @theme {
-  --color-bg: #0a0b0d;
-  --color-surface: #121317;
-  --color-surface-2: #181a20;
-  --color-surface-3: #1f222a;
-  --color-border: #282b34;
-  --color-border-bright: #3a3e49;
+  /* ── Surfaces — warm cinema dark, never flat gray ── */
+  --color-bg: #0a0807;
+  --color-surface: #14110d;
+  --color-surface-2: #1c1712;
+  --color-surface-3: #261f18;
+  --color-border: #322a20;
+  --color-border-bright: #4a3e30;
 
-  --color-text: #eef0f4;
-  --color-text-dim: #9aa0ac;
-  --color-text-faint: #62677240;
+  /* ── Ink — warm cream, like liner notes ── */
+  --color-text: #f6efe2;
+  --color-text-dim: #a99e8c;
+  --color-text-faint: #6a604f66;
 
-  --color-accent: #ccff00;
-  --color-accent-soft: #d9ff4d;
-  --color-accent-deep: #aadb00;
+  /* ── Amber — the warm primary (music, analog warmth) ── */
+  --color-accent: #ff9d2e;
+  --color-accent-soft: #ffbd6e;
+  --color-accent-deep: #e07c12;
 
-  --color-cool: #5ad1ff;
-  --color-warm: #ff8a3d;
+  /* ── Teal — the signal channel (tech, AI) ── */
+  --color-signal: #2fe0cb;
+  --color-signal-soft: #8ff0e3;
+  --color-signal-deep: #13b4a2;
+  /* legacy alias used by meters / badges */
+  --color-cool: #2fe0cb;
 
-  --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
-  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  /* ── Coral — destructive / errors ── */
+  --color-warm: #ff6f57;
 
-  --radius-card: 14px;
+  --font-display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  --radius-card: 16px;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @layer base {
@@ -55,11 +69,29 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    /* subtle vignette + grain-free gradient for editorial depth */
+    /* Cinematic teal/amber grade washing in from the corners. */
     background-image:
-      radial-gradient(900px 600px at 88% -8%, rgba(204, 255, 0, 0.05), transparent 60%),
-      radial-gradient(700px 500px at 5% 105%, rgba(90, 209, 255, 0.04), transparent 55%);
+      radial-gradient(1100px 720px at 84% -12%, rgba(255, 157, 46, 0.10), transparent 58%),
+      radial-gradient(900px 640px at 2% 108%, rgba(47, 224, 203, 0.08), transparent 55%),
+      radial-gradient(700px 520px at 110% 70%, rgba(47, 224, 203, 0.045), transparent 60%);
     background-attachment: fixed;
+  }
+
+  /* Fine film grain over everything — sits below content, above the wash. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.5;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  }
+
+  /* Keep app content above the grain layer. */
+  #root {
+    position: relative;
+    z-index: 1;
   }
 
   h1,
@@ -69,24 +101,23 @@
   .font-display {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
+    font-weight: 700;
   }
 
   ::selection {
     background: var(--color-accent);
-    color: #0a0b0d;
+    color: #18120a;
   }
 
-  /* Focus ring — visible on every interactive element */
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--color-signal);
     outline-offset: 2px;
     border-radius: 6px;
   }
 
-  /* Thin custom scrollbars */
   ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 11px;
+    height: 11px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
@@ -94,7 +125,7 @@
   ::-webkit-scrollbar-thumb {
     background: var(--color-surface-3);
     border-radius: 8px;
-    border: 2px solid var(--color-bg);
+    border: 3px solid var(--color-bg);
   }
   ::-webkit-scrollbar-thumb:hover {
     background: var(--color-border-bright);
@@ -105,23 +136,68 @@
   .text-balance {
     text-wrap: balance;
   }
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+  .mono-nums {
+    font-variant-numeric: tabular-nums;
+    font-family: var(--font-mono);
+  }
+
+  /* Tiny tracked-out label — the "instrument panel" voice. */
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  /* Teal→amber signal text for hero accents. */
+  .text-grade {
+    background: linear-gradient(100deg, var(--color-signal) 0%, var(--color-accent) 70%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Faint engineering grid. */
   .grid-texture {
     background-image:
       linear-gradient(var(--color-border) 1px, transparent 1px),
       linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
-    background-size: 28px 28px;
-    opacity: 0.25;
+    background-size: 30px 30px;
+    opacity: 0.22;
   }
-  /* accent glow used sparingly on the active/playing state */
+
+  /* Hero cover wall — dissolve into the room toward the text and the edges. */
+  .hero-album-wall {
+    opacity: 0.85;
+    -webkit-mask-image:
+      linear-gradient(to right, transparent, #000 46%),
+      linear-gradient(to bottom, #000 64%, transparent);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(to right, transparent, #000 46%),
+      linear-gradient(to bottom, #000 64%, transparent);
+    mask-composite: intersect;
+  }
+
+  /* Amber glow on the active/playing element. */
   .glow-accent {
-    box-shadow: 0 0 0 1px var(--color-accent-deep), 0 8px 30px -8px rgba(204, 255, 0, 0.45);
+    box-shadow: 0 0 0 1px var(--color-accent-deep), 0 10px 36px -8px rgba(255, 157, 46, 0.55);
   }
-  .mono-nums {
-    font-variant-numeric: tabular-nums;
+  .glow-signal {
+    box-shadow: 0 0 0 1px var(--color-signal-deep), 0 10px 36px -8px rgba(47, 224, 203, 0.5);
+  }
+
+  /* Glass panel — the console surface. */
+  .panel {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0));
+    backdrop-filter: blur(8px);
   }
 }
 
-/* ── Equalizer / waveform animation used on the now-playing card art ───────── */
+/* ── Equalizer / waveform animation on now-playing art ─────────────────────── */
 @keyframes eq-bounce {
   0%,
   100% {
@@ -131,26 +207,15 @@
     transform: scaleY(1);
   }
 }
-
 .eq-bar {
   transform-origin: bottom;
   animation: eq-bounce 900ms var(--ease-out-expo) infinite;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .eq-bar {
-    animation: none;
-    transform: scaleY(0.6);
-  }
-  * {
-    scroll-behavior: auto !important;
-  }
-}
-
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -158,7 +223,7 @@
   }
 }
 .animate-fade-up {
-  animation: fade-up 0.4s var(--ease-out-expo) both;
+  animation: fade-up 0.5s var(--ease-out-expo) both;
 }
 
 @keyframes shimmer {
@@ -176,11 +241,100 @@
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.04),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
   animation: shimmer 1.4s infinite;
+}
+
+/* ── PIN gate choreography ─────────────────────────────────────────────────── */
+
+/* Wrong code — horizontal shake. */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  15% { transform: translateX(-9px); }
+  30% { transform: translateX(8px); }
+  45% { transform: translateX(-6px); }
+  60% { transform: translateX(5px); }
+  75% { transform: translateX(-3px); }
+}
+.animate-shake {
+  animation: shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+/* A filled digit cell popping in. */
+@keyframes pin-pop {
+  0% { transform: scale(0.4); opacity: 0; }
+  60% { transform: scale(1.18); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-pin-pop {
+  animation: pin-pop 0.28s var(--ease-spring) both;
+}
+
+/* Keypad press feedback. */
+@keyframes pad-press {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+.animate-pad-press {
+  animation: pad-press 0.18s var(--ease-out-expo);
+}
+
+/* Access granted — the unlock burst ring. */
+@keyframes unlock-ring {
+  0% { transform: scale(0.4); opacity: 0.9; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+.animate-unlock-ring {
+  animation: unlock-ring 0.9s var(--ease-out-expo) forwards;
+}
+
+/* Panel dissolving away after success. */
+@keyframes gate-dissolve {
+  0% { opacity: 1; transform: scale(1); filter: blur(0); }
+  100% { opacity: 0; transform: scale(1.04); filter: blur(8px); }
+}
+.animate-gate-dissolve {
+  animation: gate-dissolve 0.6s var(--ease-out-expo) 0.5s forwards;
+}
+
+/* Slow ambient drift for the gate's background signal lines. */
+@keyframes signal-drift {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-signal-drift {
+  animation: signal-drift 14s linear infinite;
+}
+
+/* Soft breathing glow used on the locked state. */
+@keyframes breathe {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+.animate-breathe {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+/* Reveal of the unlocked tools. */
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(16px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-reveal {
+  animation: reveal 0.6s var(--ease-out-expo) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eq-bar {
+    animation: none;
+    transform: scaleY(0.6);
+  }
+  .animate-signal-drift,
+  .animate-breathe {
+    animation: none;
+  }
+  * {
+    scroll-behavior: auto !important;
+  }
 }
