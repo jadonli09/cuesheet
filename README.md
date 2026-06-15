@@ -4,7 +4,7 @@
 a solo video editor. It recommends *known, recognizable commercial songs* to
 soundtrack footage — three ways:
 
-1. **Browse & filter** a catalog of 167 hand-tagged real songs by mood, genre,
+1. **Browse & filter** a catalog of ~1,000 hand-tagged real songs by mood, genre,
    energy, scene-fit, place, and food.
 2. **Drop in a video** and it builds a **Project Mood Profile** from the visuals
    (dominant palette, brightness, cut/pacing) and the spoken audio (in-browser
@@ -34,8 +34,10 @@ across sessions.
   catalog, enriched via the same preview path. No key → it silently stays local.
   A badge shows which mode is active.
 - **Persistent mini-player** with queue, scrubber, prev/next, and `space` = play/pause.
-- **Dark editorial design** — acid-lime-on-charcoal, Space Grotesk + IBM Plex Sans
-  (bundled, no CDN), waveform motifs throughout. Responsive at 375 / 768 / 1440.
+- **Dark editorial design** — teal-&-amber on near-black charcoal, Bricolage
+  Grotesque + Hanken Grotesk + IBM Plex Mono (bundled, no CDN), cue-blade /
+  waveform motifs throughout. The gold cue-blade badge doubles as the favicon and
+  the in-app logo. Responsive at 375 / 768 / 1440.
 
 ## Tech stack
 
@@ -80,7 +82,8 @@ api/
 src/
   types.ts            Song, tag unions, MoodProfile, DerivedSignals, Project, …
   data/
-    catalog.ts        167 real songs, controlled-vocab tags
+    catalog.ts        BASE songs + merges batch1–8, deduped, capped at 1,000
+    batch1–8.ts       song batches (trending/popular), merged by catalog.ts
     vocab.ts          tag lists + human labels
   lib/
     jsonp.ts          JSONP fetcher
